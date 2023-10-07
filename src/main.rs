@@ -8,7 +8,7 @@ fn main() {
         match stream {
             Ok(mut stream) => {
                 println!("{}", format!("accepted new connection",));
-                write!(&mut stream, "HTTP/1.1 200 OK\r\n\r\n ").expect("Failed to respond.");
+                write!(&mut stream, "HTTP/1.1 200 OK\r\n\r\n ".as_bytes()).expect("Failed to respond.");
             }
             Err(e) => {
                 println!("error: {}", e);
