@@ -15,21 +15,25 @@ fn main() {
                     if let Ok(request_str) = str::from_utf8(&buffer[0..bytes_read]) {
                         // Parse the request to extract the path
                         if let Some(path) = parse_request_path(request_str) {
-                            // Check if the path is of the form "/echo/<a-random-string>"
-                            if let Some(random_string) = extract_random_string(&path) {
-                                // Prepare the HTTP response with the random string
-                                let response = format!(
-                                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}\r\n",
-                                    random_string.len(),
-                                    random_string
-                                );
-
-                                // Write the response to the client
-                                if let Err(e) = _stream.write_all(response.as_bytes()) {
-                                    println!("Error writing to client: {}", e);
-                                } else {
-                                    println!("Accepted new connection: {:?}", _stream);
-                                }
+                            let random_string = "Hello, World!";
+                            let success_response = format!(
+                                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}\r\n",
+                                random_string.len(),
+                                random_string
+                            );
+                            // Prepare the HTTP response
+                            let response = if path == "/" {
+                                success_response
+                            } else {
+                                format!(
+                                    "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 9\r\n\r\nNot Found\r\n"
+                                )
+                            };
+                            // Write the response to the client
+                            if let Err(e) = _stream.write_all(response.as_bytes()) {
+                                println!("Error writing to client: {}", e);
+                            } else {
+                                println!("Accepted new connection: {:?}", _stream);
                             }
                         }
                     }
@@ -55,19 +59,6 @@ fn parse_request_path(request: &str) -> Option<&str> {
         if parts.len() >= 2 {
             // The path is the second part of the start line
             return Some(parts[1]);
-        }
-    }
-
-    None
-}
-
-fn extract_random_string(path: &str) -> Option<&str> {
-    // Check if the path is of the form "/echo/<a-random-string>"
-    let mut parts = path.split('/');
-    if parts.next() == Some("") && parts.next() == Some("echo") {
-        // Extract the random string (the third part)
-        if let Some(random_string) = parts.next() {
-            return Some(random_string);
         }
     }
 
