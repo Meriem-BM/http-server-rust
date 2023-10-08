@@ -47,7 +47,7 @@ fn main() {
                             );
                     } else if path.starts_with("/files/") {
                         let args: Vec<String> = env::args().collect();
-                        if (req_method.unwrap() != "GET") {
+                        if req_method.unwrap() == "GET" {
                             let file_name: &str = path.trim_start_matches("/files/");
 
                             if args[2].len() < 2 {
