@@ -61,7 +61,7 @@ fn main() {
                         if std::path::Path::new(&file_path).exists() {
                             let file = std::fs::read_to_string(file_path).unwrap();
                             response = format!(
-                                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                                "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",
                                 file.len(),
                                 file
                             );
