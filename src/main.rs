@@ -1,3 +1,4 @@
+use std::env;
 use std::io::{prelude::*, Write};
 use std::net::{TcpListener, TcpStream};
 use std::str;
@@ -43,6 +44,32 @@ fn main() {
                                 user_agent.len(),
                                 user_agent
                             );
+                    } else if path.starts_with("/files/") {
+                        let file_name: &str = path.trim_start_matches("/files/");
+                        let args: Vec<String> = env::args().collect();
+
+                        if args[2].len() < 2 {
+                            panic!("Please provide a directory to serve files from");
+                        }
+                        let directory = if args[2].clone() == "/" || args[2].clone() == "" {
+                            env::current_dir().unwrap()
+                        } else {
+                            env::current_dir().unwrap().join(args[2].clone())
+                        };
+                        let file_path = directory.join(file_name);
+
+                        if std::path::Path::new(&file_path).exists() {
+                            let file = std::fs::read_to_string(file_path).unwrap();
+                            response = format!(
+                                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                                file.len(),
+                                file
+                            );
+                        } else {
+                            response = format!(
+                                "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
+                            );
+                        }
                     } else {
                         response = format!(
                                 "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
