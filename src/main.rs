@@ -8,28 +8,24 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut _stream) => {
-                // Read the request data into a buffer
                 let mut buffer = [0; 1024];
                 if let Ok(bytes_read) = _stream.read(&mut buffer) {
-                    // Convert the bytes to a string
                     if let Ok(request_str) = str::from_utf8(&buffer[0..bytes_read]) {
-                        // Parse the request to extract the path
                         if let Some(path) = parse_request_path(request_str) {
                             let random_string = "Hello, World!";
-                            let success_response = format!(
-                                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}\r\n",
-                                random_string.len(),
-                                random_string
-                            );
-                            // Prepare the HTTP response
-                            let response = if path == "/" {
-                                success_response
+                            let response: String;
+                            if path == "/" {
+                                response = format!(
+                                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}\r\n",
+                                    random_string.len(),
+                                    random_string
+                                );
                             } else {
-                                format!(
-                                    "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 9\r\n\r\nNot Found\r\n"
-                                )
+                                response = format!(
+                                    "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
+                                );
                             };
-                            // Write the response to the client
+
                             if let Err(e) = _stream.write_all(response.as_bytes()) {
                                 println!("Error writing to client: {}", e);
                             } else {
