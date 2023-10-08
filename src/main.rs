@@ -74,11 +74,10 @@ fn main() {
                             }
                         } else if req_method.unwrap() == "POST" {
                             // file content from request body
-                            let file_content: &str = request_str
-                                .lines()
-                                .find(|line| line.starts_with("Content-Type: "))
-                                .unwrap_or("Content-Type: Unknown")
-                                .trim_start_matches("Content-Type: ");
+                            let body: Vec<&str> = request_str.split("\r\n\r\n").collect();
+                            let file_content = body[1];
+
+                            print!("file_content: {}", file_content);
 
                             let file_name: &str = path.trim_start_matches("/files/");
                             if args[2].len() < 2 {
