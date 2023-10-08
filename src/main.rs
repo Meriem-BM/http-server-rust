@@ -11,6 +11,7 @@ fn main() {
                 let mut buffer = [0; 1024];
                 if let Ok(bytes_read) = _stream.read(&mut buffer) {
                     if let Ok(request_str) = str::from_utf8(&buffer[0..bytes_read]) {
+                        print!("{}", request_str);
                         if let Some(path) = parse_request_path(request_str) {
                             let response: String;
                             if path == "/" {
@@ -21,6 +22,17 @@ fn main() {
                                     "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
                                     passed_string.len(),
                                     passed_string
+                                );
+                            } else if path == ("/user-agent") {
+                                let user_agent: &str = request_str
+                                    .lines()
+                                    .find(|line| line.starts_with("User-Agent: "))
+                                    .unwrap_or("User-Agent: Unknown")
+                                    .trim_start_matches("User-Agent: ");
+                                response = format!(
+                                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                                    user_agent.len(),
+                                    user_agent
                                 );
                             } else {
                                 response = format!(
