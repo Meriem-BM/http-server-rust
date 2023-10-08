@@ -12,13 +12,15 @@ fn main() {
                 if let Ok(bytes_read) = _stream.read(&mut buffer) {
                     if let Ok(request_str) = str::from_utf8(&buffer[0..bytes_read]) {
                         if let Some(path) = parse_request_path(request_str) {
-                            let random_string = "Hello, World!";
                             let response: String;
                             if path == "/" {
+                                response = format!("HTTP/1.1 200 OK\r\n\r\n");
+                            } else if path.starts_with("/echo/") {
+                                let passed_string: &str = path.trim_start_matches("/echo/");
                                 response = format!(
-                                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}\r\n",
-                                    random_string.len(),
-                                    random_string
+                                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                                    passed_string.len(),
+                                    passed_string
                                 );
                             } else {
                                 response = format!(
