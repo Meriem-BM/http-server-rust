@@ -23,6 +23,7 @@ fn main() {
         if let Ok(bytes_read) = _stream.read(&mut buffer) {
             if let Ok(request_str) = str::from_utf8(&buffer[0..bytes_read]) {
                 if let Some(path) = parse_request_path(request_str) {
+                    let req_method = parse_request_method(request_str);
                     let response: String;
                     if path == "/" {
                         response = format!("HTTP/1.1 200 OK\r\n\r\n");
@@ -45,26 +46,61 @@ fn main() {
                                 user_agent
                             );
                     } else if path.starts_with("/files/") {
-                        let file_name: &str = path.trim_start_matches("/files/");
                         let args: Vec<String> = env::args().collect();
+                        if (req_method.unwrap() != "GET") {
+                            let file_name: &str = path.trim_start_matches("/files/");
 
-                        if args[2].len() < 2 {
-                            panic!("Please provide a directory to serve files from");
-                        }
-                        let directory = if args[2].clone() == "/" || args[2].clone() == "" {
-                            env::current_dir().unwrap()
-                        } else {
-                            env::current_dir().unwrap().join(args[2].clone())
-                        };
-                        let file_path = directory.join(file_name);
+                            if args[2].len() < 2 {
+                                panic!("Please provide a directory to serve files from");
+                            }
+                            let directory = if args[2].clone() == "/" || args[2].clone() == "" {
+                                env::current_dir().unwrap()
+                            } else {
+                                env::current_dir().unwrap().join(args[2].clone())
+                            };
+                            let file_path = directory.join(file_name);
 
-                        if std::path::Path::new(&file_path).exists() {
-                            let file = std::fs::read_to_string(file_path).unwrap();
-                            response = format!(
+                            if std::path::Path::new(&file_path).exists() {
+                                let file = std::fs::read_to_string(file_path).unwrap();
+                                response = format!(
                                 "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",
                                 file.len(),
                                 file
                             );
+                            } else {
+                                response = format!(
+                                "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
+                            );
+                            }
+                        } else if req_method.unwrap() == "POST" {
+                            // file content from request body
+                            let file_content: &str = request_str
+                                .lines()
+                                .find(|line| line.starts_with("Content-Type: "))
+                                .unwrap_or("Content-Type: Unknown")
+                                .trim_start_matches("Content-Type: ");
+
+                            let file_name: &str = path.trim_start_matches("/files/");
+                            if args[2].len() < 2 {
+                                panic!("Please provide a directory to serve files from");
+                            }
+                            let directory = if args[2].clone() == "/" || args[2].clone() == "" {
+                                env::current_dir().unwrap()
+                            } else {
+                                env::current_dir().unwrap().join(args[2].clone())
+                            };
+                            let file_path = directory.join(file_name);
+
+                            if std::path::Path::new(&file_path).exists() {
+                                response = format!(
+                                "HTTP/1.1 409 CONFLICT\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
+                            );
+                            } else {
+                                std::fs::write(file_path, file_content).unwrap();
+                                response = format!(
+                                "HTTP/1.1 201 CREATED\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
+                            );
+                            }
                         } else {
                             response = format!(
                                 "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
@@ -95,6 +131,20 @@ fn parse_request_path(request: &str) -> Option<&str> {
 
         if parts.len() >= 2 {
             return Some(parts[1]);
+        }
+    }
+
+    None
+}
+
+fn parse_request_method(request: &str) -> Option<&str> {
+    let lines: Vec<&str> = request.lines().collect();
+
+    if let Some(start_line) = lines.get(0) {
+        let parts: Vec<&str> = start_line.split_whitespace().collect();
+
+        if parts.len() >= 1 {
+            return Some(parts[0]);
         }
     }
 
